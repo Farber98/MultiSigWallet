@@ -19,6 +19,17 @@ contract MultiSigWalletTest is Test {
         msw = new MultiSigWallet(add, 3);
     }
 
+    /* TEST PRIMIVITES */
+
+    function primitiveSubmitTrasaction() private {}
+
+    function primitiveConfirmTrasaction() private {}
+
+    function primitiveRevokeTrasaction() private {}
+
+    function primitiveExecuteTrasaction() private {}
+
+    /* TEST FUNCTIONS */
     function testSubmitTransactionNotOwner() public {
         vm.startPrank(address(0x6));
         vm.expectRevert("Not owner.");
@@ -28,14 +39,6 @@ contract MultiSigWalletTest is Test {
             "0x00"
         );
         vm.stopPrank();
-    }
-
-    struct Transaction {
-        address to;
-        uint256 value;
-        bytes data;
-        bool executed;
-        uint256 numConfirmations;
     }
 
     function testSubmitTransactionOk() public {
@@ -59,14 +62,33 @@ contract MultiSigWalletTest is Test {
         vm.stopPrank();
     }
 
-    /* 
-    function testNftCreationWrongOwner() public {
-        vm.startPrank(address(0x1));
-        vm.expectRevert("Ownable: caller is not the owner");
-        soupr4.safeMint(
-            address(0x1),
-            "QmNu8vQ3yXBykzJMy88sWnd2VKwfHDFqHHCNSoFVimpY2J"
-        );
-        vm.stopPrank();
-    } */
+    function testConfirmTransactionNotOwner() public {}
+
+    function testConfirmTransactionNotExists() public {}
+
+    function testConfirmTransactionOk() public {}
+
+    function testConfirmTransactionAlreadyConfirmed() public {}
+
+    function textConfirmTransactionAlreadyExecuted() public {}
+
+    function testRevokeTransactionNotOwner() public {}
+
+    function testRevokeTransactionNotExists() public {}
+
+    function testRevokeTransactionAlreadyExecuted() public {}
+
+    function testRevokeTransactionNotConfirmed() public {}
+
+    function textRevokeTransactionOk() public {}
+
+    function testExecuteTransactionNotOwner() public {}
+
+    function testExecuteTransactionNotExists() public {}
+
+    function testExecuteTransactionAlreadyExecuted() public {}
+
+    function testExecuteTransactionNotEnoughConfirmations() public {}
+
+    function textExecuteTransactionOk() public {}
 }

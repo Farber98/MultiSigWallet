@@ -24,6 +24,8 @@ contract MultiSigWallet {
     }
 
     Transaction[] public transactions;
+    mapping(uint256 => mapping(address => bool))
+        public transactionConfirmations;
 
     /*** EVENTS ****/
     event SubmitTransaction(
@@ -45,8 +47,51 @@ contract MultiSigWallet {
         _;
     }
 
+    modifier txExists(uint256 _txIndex) {
+        require(_txIndex < transactions.length, "Invalid transaction id.");
+        _;
+    }
+
+    modifier txNotExecuted(uint256 _txIndex) {
+        require(
+            !transactions[_txIndex].executed,
+            "Transaction already executed."
+        );
+        _;
+    }
+
+    modifier ownerNotConfirmed(uint256 _txIndex) {
+        require(
+            !transactionConfirmations[_txIndex][msg.sender],
+            "Transaction already confirmed by sender."
+        );
+        _;
+    }
+
+    modifier ownerConfirmed(uint256 _txIndex) {
+        require(
+            transactionConfirmations[_txIndex][msg.sender],
+            "Transaction not confirmed by sender."
+        );
+        _;
+    }
+
+    modifier enoughConfirmations(uint256 _txIndex) {
+        require(
+            transactions[_txIndex].numConfirmations >= confirmationsRequired,
+            "Not enough confirmations."
+        );
+        _;
+    }
+
     /*** LOGIC ****/
-    // ["0xd31F1498f07d5D36a9B46c91EdFd93f57F6A35F0","0x0000000000000000000000000000000000000001"]
+    /* 
+    ["0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2",
+    "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
+    "0x0000000000000000000000000000000000000001",
+    "0x0000000000000000000000000000000000000002"
+    ] 
+    */
     constructor(address[] memory _owners, uint8 _confirmationsRequired) {
         require(
             _owners.length > 0 && _confirmationsRequired > 0,
@@ -72,6 +117,10 @@ contract MultiSigWallet {
     }
 
     // Permits an owner propose a transaction.
+
+    /*
+        "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2", "1000000000000000000", "0x00" 
+     */
     function submitTransaction(
         address payable _to,
         uint256 _value,
@@ -93,13 +142,50 @@ contract MultiSigWallet {
     }
 
     // Permits an owner confirm a transaction.
-    function confirmTransaction() external {}
+    function confirmTransaction(uint256 _txIndex)
+        external
+        onlyOwner
+        txExists(_txIndex)
+        txNotExecuted(_txIndex)
+        ownerNotConfirmed(_txIndex)
+    {
+        transactions[_txIndex].numConfirmations++;
+        transactionConfirmations[_txIndex][msg.sender] = true;
+        emit ConfirmTransaction(msg.sender, _txIndex);
+    }
 
     // Permits an owner to execute a transaction if enough owners confirmed it.
-    function executeTransaction() external {}
+    function executeTransaction(uint256 _txIndex)
+        external
+        onlyOwner
+        txNotExecuted(_txIndex)
+        txExists(_txIndex)
+        enoughConfirmations(_txIndex)
+    {
+        transactions[_txIndex].executed = true;
+        (bool success, ) = transactions[_txIndex].to.call{
+            value: transactions[_txIndex].value
+        }(transactions[_txIndex].data);
+        require(success, "tx failed");
+
+        emit ExecuteTransaction(msg.sender, _txIndex);
+    }
 
     // Permits an owner to revoke his previous confirmation of a transaction.
-    function revokeTransaction() external {}
+    function revokeTransaction(uint256 _txIndex)
+        external
+        onlyOwner
+        txNotExecuted(_txIndex)
+        txExists(_txIndex)
+        ownerConfirmed(_txIndex)
+    {
+        transactionConfirmations[_txIndex][msg.sender] = false;
+        emit RevokeTransaction(msg.sender, _txIndex);
+    }
+
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance);
+    }
 
     /* TEST HELPERS */
     function getTxAddress(uint256 _index) public view returns (address to) {

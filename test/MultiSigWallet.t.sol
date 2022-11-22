@@ -102,13 +102,8 @@ contract MultiSigWalletTest is Test {
         vm.stopPrank();
     }
 
-    function testSubmitTransactionOk() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
+    function testSubmitTransactionOk() public returns (uint256 txIndex) {
+        txIndex = primitiveSubmitTrasaction(sender, receiver1, value, data);
 
         primitiveCheckTransaction(
             txIndex,
@@ -118,44 +113,17 @@ contract MultiSigWalletTest is Test {
             executed,
             numConfirmations
         );
+        return txIndex;
     }
 
     function testConfirmTransactionNotOwner() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.expectRevert("Not owner.");
         primitiveConfirmTrasaction(txIndex);
     }
 
     function testConfirmTransactionNotExists() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
-
         vm.startPrank(sender);
         vm.expectRevert("Invalid transaction id.");
         primitiveConfirmTrasaction(999999);
@@ -163,20 +131,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionOk() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -193,20 +148,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionAlreadyConfirmed() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -225,20 +167,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionNotOwner() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -250,20 +179,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionNotExists() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -275,20 +191,7 @@ contract MultiSigWalletTest is Test {
     function testRevokeTransactionNotConfirmed() public {
         address notConfirmer = address(0x4);
 
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(notConfirmer);
         vm.expectRevert("Transaction not confirmed by sender.");
@@ -297,52 +200,18 @@ contract MultiSigWalletTest is Test {
     }
 
     function textRevokeTransactionOk() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
         assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         primitiveRevokeTrasaction(txIndex);
         assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), false);
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
         vm.stopPrank();
     }
 
     function testExecuteTransactionNotOwner() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -370,20 +239,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransactionNotExists() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -410,20 +266,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransactionNotEnoughConfirmations() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -442,20 +285,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function textExecuteTransactionOk() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -482,20 +312,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransactionAlreadyExecuted() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -523,20 +340,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionAlreadyExecuted() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
@@ -564,20 +368,7 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionAlreadyExecuted() public {
-        uint256 txIndex = primitiveSubmitTrasaction(
-            sender,
-            receiver1,
-            value,
-            data
-        );
-        primitiveCheckTransaction(
-            txIndex,
-            receiver1,
-            value,
-            data,
-            executed,
-            numConfirmations
-        );
+        uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);

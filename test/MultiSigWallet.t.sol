@@ -6,9 +6,20 @@ import "forge-std/console.sol";
 import "../src/MultiSigWallet.sol";
 
 contract MultiSigWalletTest is Test {
+    /* COMMON VARIABLES */
+
     MultiSigWallet msw;
+    address sender = address(0x5);
+    address confirmer4 = address(0x4);
+    address confirmer3 = address(0x3);
+    address payable receiver1 = payable(address(0x1));
+    uint256 value = 1 ether;
+    bytes data = "0x00";
+    bool executed = false;
+    uint8 numConfirmations = 0;
 
     function setUp() public {
+        //Define owners array
         address[] memory add = new address[](6);
         add[0] = address(0x0000000000000000000000000000000000000001);
         add[1] = address(0x0000000000000000000000000000000000000002);
@@ -17,8 +28,10 @@ contract MultiSigWalletTest is Test {
         add[4] = address(0x0000000000000000000000000000000000000005);
         add[5] = address(0x0000000000000000000000000000000000000009);
 
+        //Contract instance
         msw = new MultiSigWallet(add, 3);
 
+        //Fund wallet and transfer funds to the smart contract
         vm.startPrank(add[5]);
         vm.deal(add[5], 20 ether);
         (bool success, ) = address(msw).call{value: 20 ether}("");
@@ -26,7 +39,7 @@ contract MultiSigWalletTest is Test {
         vm.stopPrank();
     }
 
-    /* TEST PRIMITIVES */
+    /* PRIMITIVES FUNCTIONS FOR REPETEAD OPERATIONS */
 
     function primitiveSubmitTrasaction(
         address _sender,
@@ -69,7 +82,15 @@ contract MultiSigWalletTest is Test {
         assertEq(msw.getTxNumConfirmations(_txIndex), _confirmations);
     }
 
+    function primitiveCheckTransactionIsConfirmed(
+        uint256 _txIndex,
+        address _add
+    ) private view returns (bool confirmation) {
+        return msw.getTransactionConfirmation(_txIndex, _add);
+    }
+
     /* TEST FUNCTIONS */
+
     function testSubmitTransactionNotOwner() public {
         vm.startPrank(address(0x6));
         vm.expectRevert("Not owner.");
@@ -82,22 +103,16 @@ contract MultiSigWalletTest is Test {
     }
 
     function testSubmitTransactionOk() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
+
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -106,22 +121,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionNotOwner() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -133,22 +141,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionNotExists() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -162,22 +163,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionOk() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -186,9 +180,10 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -198,22 +193,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionAlreadyConfirmed() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -222,9 +210,10 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -236,22 +225,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionNotOwner() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -260,6 +242,7 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
         vm.expectRevert("Not owner.");
@@ -267,22 +250,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionNotExists() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -297,23 +273,17 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionNotConfirmed() public {
-        address sender = address(0x5);
         address notConfirmer = address(0x4);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
 
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -327,22 +297,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function textRevokeTransactionOk() public {
-        address sender = address(0x5);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -351,10 +314,12 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         primitiveRevokeTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), false);
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -364,24 +329,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransactionNotOwner() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -390,14 +346,23 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         vm.stopPrank();
 
         vm.expectRevert("Not owner.");
@@ -405,24 +370,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testExecuteTransactionNotExists() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -431,37 +387,38 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         vm.expectRevert("Invalid transaction id.");
         primitiveExecuteTrasaction(999999);
         vm.stopPrank();
     }
 
     function testExecuteTransactionNotEnoughConfirmations() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -470,34 +427,30 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.expectRevert("Not enough confirmations.");
         primitiveExecuteTrasaction(txIndex);
         vm.stopPrank();
     }
 
     function textExecuteTransactionOk() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -506,38 +459,38 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         primitiveExecuteTrasaction(txIndex);
-        primitiveCheckTransaction(txIndex, receiver, value, data, true, 3);
+        primitiveCheckTransaction(txIndex, receiver1, value, data, true, 3);
         vm.stopPrank();
     }
 
     function testExecuteTransactionAlreadyExecuted() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -546,14 +499,23 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         primitiveExecuteTrasaction(txIndex);
         vm.expectRevert("Transaction already executed.");
         primitiveExecuteTrasaction(txIndex);
@@ -561,24 +523,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testConfirmTransactionAlreadyExecuted() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -587,14 +540,23 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         primitiveExecuteTrasaction(txIndex);
         vm.expectRevert("Transaction already executed.");
         primitiveConfirmTrasaction(txIndex);
@@ -602,24 +564,15 @@ contract MultiSigWalletTest is Test {
     }
 
     function testRevokeTransactionAlreadyExecuted() public {
-        address sender = address(0x5);
-        address confirmer2 = address(0x4);
-        address confirmer3 = address(0x3);
-        address payable receiver = payable(address(0x1));
-        uint256 value = 1 ether;
-        bytes memory data = "0x00";
-        bool executed = false;
-        uint8 numConfirmations = 0;
-
         uint256 txIndex = primitiveSubmitTrasaction(
             sender,
-            receiver,
+            receiver1,
             value,
             data
         );
         primitiveCheckTransaction(
             txIndex,
-            receiver,
+            receiver1,
             value,
             data,
             executed,
@@ -628,14 +581,24 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.stopPrank();
 
-        vm.startPrank(confirmer2);
+        vm.startPrank(confirmer4);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer4),
+            true
+        );
+
         vm.stopPrank();
 
         vm.startPrank(confirmer3);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(
+            primitiveCheckTransactionIsConfirmed(txIndex, confirmer3),
+            true
+        );
         primitiveExecuteTrasaction(txIndex);
         vm.expectRevert("Transaction already executed.");
         primitiveRevokeTrasaction(txIndex);

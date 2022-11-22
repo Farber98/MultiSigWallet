@@ -219,4 +219,12 @@ contract MultiSigWallet {
     function getTransactionsLength() public view returns (uint256 length) {
         return transactions.length;
     }
+
+    function getTransactionConfirmation(uint256 _index, address _add)
+        public
+        view
+        returns (bool confirmation)
+    {
+        return transactionConfirmations[_index][_add];
+    }
 }

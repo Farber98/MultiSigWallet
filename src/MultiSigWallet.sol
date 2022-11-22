@@ -158,15 +158,15 @@ contract MultiSigWallet {
     function executeTransaction(uint256 _txIndex)
         external
         onlyOwner
-        txNotExecuted(_txIndex)
         txExists(_txIndex)
+        txNotExecuted(_txIndex)
         enoughConfirmations(_txIndex)
     {
         transactions[_txIndex].executed = true;
         (bool success, ) = transactions[_txIndex].to.call{
             value: transactions[_txIndex].value
         }(transactions[_txIndex].data);
-        require(success, "tx failed");
+        require(success, "Transaction failed.");
 
         emit ExecuteTransaction(msg.sender, _txIndex);
     }
@@ -175,8 +175,8 @@ contract MultiSigWallet {
     function revokeTransaction(uint256 _txIndex)
         external
         onlyOwner
-        txNotExecuted(_txIndex)
         txExists(_txIndex)
+        txNotExecuted(_txIndex)
         ownerConfirmed(_txIndex)
     {
         transactionConfirmations[_txIndex][msg.sender] = false;

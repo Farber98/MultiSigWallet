@@ -16,4 +16,4 @@
 
 🧰 Understand Foundry
 
-🤖 ☑️ Deeper dive into Unit-Testing
+🤖 Deeper dive into Unit-Testing

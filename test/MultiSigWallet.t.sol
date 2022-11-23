@@ -183,6 +183,7 @@ contract MultiSigWalletTest is Test {
 
         vm.startPrank(sender);
         primitiveConfirmTrasaction(txIndex);
+        assertEq(primitiveCheckTransactionIsConfirmed(txIndex, sender), true);
         vm.expectRevert("Invalid transaction id.");
         primitiveRevokeTrasaction(999999);
         vm.stopPrank();

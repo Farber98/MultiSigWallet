@@ -199,7 +199,7 @@ contract MultiSigWalletTest is Test {
         vm.stopPrank();
     }
 
-    function textRevokeTransactionOk() public {
+    function testRevokeTransactionOk() public {
         uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
@@ -284,7 +284,7 @@ contract MultiSigWalletTest is Test {
         vm.stopPrank();
     }
 
-    function textExecuteTransactionOk() public {
+    function testExecuteTransactionOk() public {
         uint256 txIndex = testSubmitTransactionOk();
 
         vm.startPrank(sender);
@@ -308,6 +308,7 @@ contract MultiSigWalletTest is Test {
         );
         primitiveExecuteTrasaction(txIndex);
         primitiveCheckTransaction(txIndex, receiver1, value, data, true, 3);
+        assertEq(receiver1.balance, 1 ether);
         vm.stopPrank();
     }
 
